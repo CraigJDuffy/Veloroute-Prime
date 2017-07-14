@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <title>My Routing Map</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://mapzen.com/js/mapzen.css">
+  <style>
+    #map {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+    }
+      html,body{margin: 0; padding: 0;}
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://mapzen.com/js/mapzen.js"></script>
+  <script>
+    L.Mapzen.apiKey = "mapzen-bTyRhDo";
+
+    var map = L.Mapzen.map("map", {
+      //center: [41.8758,-87.6189],
+      zoom: 16
+    });
+
+    var routingControl = L.Mapzen.routing.control({
+      waypoints: [
+        L.latLng(41.8758,-87.6189),
+        L.latLng(33.8128,-117.9259)
+      ],
+      lineOptions: {
+        styles: [ {color: "white",opacity: 0.8, weight: 12},
+                {color: "#2676C6", opacity: 1, weight: 6}
+      ]},
+      router: L.Mapzen.routing.router({costing:"auto"}),
+      summaryTemplate:'<div class="start">{name}</div><div class="info {costing}">{distance}, {time}</div>',
+      routeWhileDragging: false
+    }).addTo(map);
+  </script>
+</body>
+</html>
