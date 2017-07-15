@@ -9,21 +9,18 @@
 	<script src="https://mapzen.com/js/mapzen.min.js"> </script>
 </head>
 <body>
-	<div id="map"></div>
-	
-	<form action="/action_page.php">
-  	To: <input type="text" name="startLoc"><br>
-  	From: <input type="text" name="endLoc"><br>
-  	<input type="submit" value="Submit">
-	</form>
 
-<script>
+	<div id="locSearch">
+		<input type="text" name="startLoc" id="startLoc" />
+		<input type="text" name="endLoc" id="endLoc" />
+	</div>
+	<div id="map"></div>
+  <script>
 		L.Mapzen.apiKey = "mapzen-bTyRhDo";
 
-		var map = L.Mapzen.map("map", {
-		zoom: 16
-		});
-
+	 	var map = L.Mapzen.map("map", {zoom: 16});
+	//	var startLngLat = document.getElementByID("startLoc").value;
+	//	var endLngLat = document.getElementByID("endLoc").value;
 		var routingControl = L.Mapzen.routing.control({
 			waypoints: [
 				L.latLng(55.909795, -3.318300),
@@ -37,5 +34,8 @@
 			routeWhileDragging: false
 		}).addTo(map);
 	</script>
+
+	<script type="text/javascript src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBWVgHe66bDWmUrLaNnOQiEDdaNm_Vba24&libraries=palces"</script>
+
 </body>
 </html>
