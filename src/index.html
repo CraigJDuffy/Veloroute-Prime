@@ -9,33 +9,38 @@
 	<script src="https://mapzen.com/js/mapzen.min.js"> </script>
 </head>
 <body>
-
 	<div id="locSearch">
-		<input type="text" name="startLoc" id="startLoc" />
-		<input type="text" name="endLoc" id="endLoc" />
 	</div>
 	<div id="map"></div>
   <script>
 		L.Mapzen.apiKey = "mapzen-bTyRhDo";
+		var map = L.Mapzen.map("map", {zoom: 16});
 
-	 	var map = L.Mapzen.map("map", {zoom: 16});
-	//	var startLngLat = document.getElementByID("startLoc").value;
-	//	var endLngLat = document.getElementByID("endLoc").value;
+		var geocoderOptions = {
+			expanded: true
+		}
+
+		var geocoder = L.Mapzen.geocoder(geocoderOptions);
+		geocoder.addTo(map);
 		var routingControl = L.Mapzen.routing.control({
 			waypoints: [
 				L.latLng(55.909795, -3.318300),
 				L.latLng(55.942746, -3.215559)
 			],
 			lineOptions: {
-			styles: [ {color:"#FE0000",opacity:0.50, weight: 16}, {color:"#FF6300", opacity:1, weight:12},{color:"#FFFF01", opacity:1, weight:8},{color:"#008001", opacity:1, weight:6},{color:"#0000FE", opacity:1, weight:4},{color:"#4B0081", opacity:1, weight:2},{color:"#BC31FE", opacity:1, weight:1}]
+			styles: [ {color:"#FE0000",opacity:0.50, weight: 16},
+			 {color:"#FF6300", opacity:1, weight:12},
+			 {color:"#FFFF01",opacity:1, weight:8},
+			 {color:"#008001", opacity:1, weight:6},
+			 {color:"#0000FE", opacity:1, weight:4},
+			 {color:"#4B0081", opacity:1, weight:2},
+			 {color:"#BC31FE", opacity:1, weight:1}]
 			},
+			geocoder: L.Mapzen.routing.geocoder(),
 			router: L.Mapzen.routing.router({costing:"bicycle",costing_options:{bicycle:{use_roads:"1",use_hills:"0"}}}),
 			summaryTemplate:'<div class="start">{name}</div><div class="info {costing}">{distance}, {time}</div>',
-			routeWhileDragging: false
-		}).addTo(map);
+			routeWhileDragging: false}).addTo(map);
+			L.Mapzen.routing.errorControl(routingControl).addTo(map);
 	</script>
-
-	<script type="text/javascript src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBWVgHe66bDWmUrLaNnOQiEDdaNm_Vba24&libraries=palces"</script>
-
 </body>
 </html>
