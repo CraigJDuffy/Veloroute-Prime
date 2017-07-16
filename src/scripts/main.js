@@ -33,18 +33,35 @@ var routingControl = L.Mapzen.routing.control({
 
 routingControl.addEventListener("routesfound", requestElevationData);
 
-function requestElevationData(e){
+function requestElevationData(e) {
+
+	var data = stringify(e.routes[0]);
 	var xhttp = new XMLHttpRequest();
-	var data = JSON.stringify(e.routes[0].coordinates); //Becomes an Array of {"Lat" x, "Lng" y}
+	//var data = JSON.stringify(e.routes[0].coordinates); //Becomes an Array of {"Lat" x, "Lng" y}
+	data = "?json={\"range\":true, \"shape\":".concat(data, "}&api_key=mapzen-bTyRhDo");
 	xhttp.onreadystatechange = receiveElevationData(this);
-	xhttp.open("POST", "TODO.php", true);
-	xhttp.setRequestHeader("Content-Type", "application/json");
-	xhttp.send(data);			
+	xhttp.open("GET", "http://elevation.mapzen.com/height".concat(data), true);
+	xhttp.send();			
 }
 
 function receiveElevationData(xhttp){
 	
 		//alert("!");
 	
+}
+
+function stringify(IRoute) {
+
+	var string = "[";
+
+	IRoute.coordinates.forEach(function (entry, index) {
+		string = string.concat("{\"lat\":".concat(entry.lat, ", \"lon\":", entry.lng, "}"), ",");
+	})
+
+	string = string.slice(0, -1).concat("]");
+
+	alert(string);
+
+	return string;
 }
 
