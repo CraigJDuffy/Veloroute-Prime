@@ -35,10 +35,11 @@ routingControl.addEventListener("routesfound", requestElevationData);
 
 function requestElevationData(e) {
 
-	var data = stringify(e.routes[0]);
+	var data = polyline.encode(e.routes[0].coordinates, 6);
+
+	//var data = stringify(e.routes[0]);
 	var xhttp = new XMLHttpRequest();
-	//var data = JSON.stringify(e.routes[0].coordinates); //Becomes an Array of {"Lat" x, "Lng" y}
-	data = "?json={\"range\":true, \"shape\":".concat(data, "}&api_key=mapzen-bTyRhDo");
+	data = "?json={\"range\":true, \"encoded_polyline\":\"".concat(data, "\"}&api_key=mapzen-bTyRhDo");
 	xhttp.onreadystatechange = receiveElevationData(this);
 	xhttp.open("GET", "http://elevation.mapzen.com/height".concat(data), true);
 	xhttp.send();			
@@ -50,18 +51,18 @@ function receiveElevationData(xhttp){
 	
 }
 
-function stringify(IRoute) {
+//function stringify(IRoute) {
 
-	var string = "[";
+//	var string = "[";
 
-	IRoute.coordinates.forEach(function (entry, index) {
-		string = string.concat("{\"lat\":".concat(entry.lat, ", \"lon\":", entry.lng, "}"), ",");
-	})
+//	IRoute.coordinates.forEach(function (entry, index) {
+//		string = string.concat("{\"lat\":".concat(entry.lat, ", \"lon\":", entry.lng, "}"), ",");
+//	})
 
-	string = string.slice(0, -1).concat("]");
+//	string = string.slice(0, -1).concat("]");
 
-	alert(string);
+//	alert(string);
 
-	return string;
-}
+//	return string;
+//}
 
