@@ -39,8 +39,8 @@ routingControl.addEventListener("routesfound", requestElevationData);
 
 
 var lowerHillBound = 5;
-var positiveGradientUncertainty = 3;
-var negativeGradientUncertainty = 3;
+var positiveGradientUncertainty = 7;
+var negativeGradientUncertainty = 7;
 
 function requestElevationData(e) {
 
@@ -67,10 +67,10 @@ function receiveElevationData(xhttp) {
 function processElevationData(data) {
 	var previousGrad;
 	var hillStartDistance;
-	var totalXDistance = 0;
-	var totalYHeight = 0;
+	var hillBaseHeight;
 
-	for (index = 1; index < data.range_height.length; index++) {
+
+	for (index = 1; index < data.range_height.length; index++ , previousGrad = gradient) {
 
 		var deltaY = (data.range_height[index][1] - data.range_height[index - 1][1]);
 		var deltaX = (data.range_height[index][0] - data.range_height[index - 1][0]);
@@ -81,19 +81,40 @@ function processElevationData(data) {
 		if (gradient > lowerHillBound) {//If greater than lower bound, start/continue a hill segment
 
 			if (typeof (previousGrad) == 'undefined' || previousGrad < lowerHillBound) { //Start a new hill segment
-				previousGrad = gradient;
+
 				hillStartDistance = data.range_height[index - 1][0];
-				totalXDistance += deltaX;
-				totalYHeight += deltaY
+				hillBaseHeight = data.range_height[index - 1][1];
+
+				console.log("Start Hill");
+
 			} else if (gradient < previousGrad + positiveGradientUncertainty && gradient > previousGrad - negativeGradientUncertainty) {// Continue hill segment
 
-			} else { 
+				console.log("Continue Hill");
+				
+			} else {
+				//rankHill(args);
+
+				console.log("Restart Hill");
+
+				hillStartDistance = data.range_height[index - 1][0];
+				hillBaseHeight = data.range_height[index - 1][1];
+
 				//end current segment and start a new one.
 				//End segment due to sharp change in gradient
 				//Start new segment as gradient is still considered a hill (above lower bound).
 			}
+
+			
+
 		} else {
-			//End current segment if applicable, as we are now nominally flat.
+			//End current segment if applicable, as we are now nominally flat (or downhill).
+
+			if (previousGrad > lowerHillBound) {
+				//rankHill(args)
+				console.log("End Hill");
+			}
+
+			
 		}
 	}
 }
