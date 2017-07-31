@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+	<title>Veloroute Prime</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" type="text/css" href="https://mapzen.com/js/mapzen.css" />
+	<link rel="stylesheet" type="text/css" href="css/main.css" />
+	<script src="https://mapzen.com/js/mapzen.min.js"> </script>
+	<script src="scripts/polyline.js"></script>
+
+
+</head>
+<body>
+
+	<div id="map"></div>
+
+	<script>
+		L.Mapzen.apiKey = "mapzen-bTyRhDo";
+		var map = L.Mapzen.map("map", {
+			zoom: 16,
+			center:[55.942746, -3.215559],
+			tangramOptions: {
+				scene: L.Mapzen.BasemapStyles.CinnabarMoreLabels
+			},
+			doubleClickZoom: false
+		});
+	</script>
+	<script src="scripts/main.js"></script>
+	<script src="scripts/UI.js"></script>
+
+</body>
+</html>
