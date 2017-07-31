@@ -1,4 +1,4 @@
-
+/*
 map.on("dblclick", function (e) {
 
 	if (e.originalEvent.button == 2) {
@@ -8,10 +8,9 @@ map.on("dblclick", function (e) {
 });
 
 document.getElementById("map").addEventListener("dblclick", function (e) {
-	
+
 	if (e.button == 0) {
-		alert("dobule click");
+		alert("double click");
 		map.zoomIn();
 	}
 });
-
