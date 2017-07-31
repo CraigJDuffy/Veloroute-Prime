@@ -1,4 +1,4 @@
-		
+
 
 /*	var geocoderOptions = {
 	expanded: true,
@@ -38,9 +38,9 @@ var routingControl = L.Mapzen.routing.control({
 routingControl.addEventListener("routesfound", requestElevationData);
 
 
-var lowerHillBound = 5;
-var positiveGradientUncertainty = 7;
-var negativeGradientUncertainty = 7;
+var lowerHillBound = 6;
+var positiveGradientUncertainty = 14;
+var negativeGradientUncertainty = 14;
 
 function requestElevationData(e) {
 
@@ -52,7 +52,7 @@ function requestElevationData(e) {
 		receiveElevationData(xhttp);
 	};
 	xhttp.open("GET", "http://elevation.mapzen.com/height".concat(data), true);
-	xhttp.send();			
+	xhttp.send();
 }
 
 function receiveElevationData(xhttp) {
@@ -63,6 +63,10 @@ function receiveElevationData(xhttp) {
 
 }
 
+function rankHill(dY, dX){
+	var area = (0.5) * dY * dX; // area of triangle
+	console.log("Area:" + area);
+}
 //The data returned appears to be in meters.
 function processElevationData(data) {
 	var previousGrad;
@@ -76,8 +80,6 @@ function processElevationData(data) {
 		var deltaX = (data.range_height[index][0] - data.range_height[index - 1][0]);
 		var gradient = (deltaY / deltaX) * 100; //Gradient as a percentage
 
-		console.log(index + " | "+ gradient);
-
 		if (gradient > lowerHillBound) {//If greater than lower bound, start/continue a hill segment
 
 			if (typeof (previousGrad) == 'undefined' || previousGrad < lowerHillBound) { //Start a new hill segment
@@ -86,13 +88,14 @@ function processElevationData(data) {
 				hillBaseHeight = data.range_height[index - 1][1];
 
 				console.log("Start Hill");
+				console.log(index + " | "+ gradient);
 
 			} else if (gradient < previousGrad + positiveGradientUncertainty && gradient > previousGrad - negativeGradientUncertainty) {// Continue hill segment
 
 				console.log("Continue Hill");
-				
+
 			} else {
-				//rankHill(args);
+				rankHill(deltaY, deltaX);
 
 				console.log("Restart Hill");
 
@@ -104,19 +107,17 @@ function processElevationData(data) {
 				//Start new segment as gradient is still considered a hill (above lower bound).
 			}
 
-			
+
 
 		} else {
 			//End current segment if applicable, as we are now nominally flat (or downhill).
 
 			if (previousGrad > lowerHillBound) {
-				//rankHill(args)
+				rankHill(deltaY, deltaX);
 				console.log("End Hill");
 			}
 
-			
+
 		}
 	}
 }
-
-
