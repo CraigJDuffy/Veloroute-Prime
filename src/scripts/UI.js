@@ -41,6 +41,4 @@ document.getElementById("map").addEventListener("contextmenu", function (e) {
 		}
 	}
 
-
 });
-
