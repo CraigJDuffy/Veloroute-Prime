@@ -40,6 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 var polyline = {};
+var range_coord = [];
+var geod = GeographicLib.Geodesic.WGS84;
+var acc = new GeographicLib.Accumulator.Accumulator();
 
 function py2_round(value) {
 	// Google's polyline algorithm uses the same rounding strategy as Python 2, which is different from JS for negative values
@@ -141,12 +144,19 @@ polyline.encode = function (coordinates, precision) {
 	if (!coordinates.length) { return ''; }
 
 	var factor = Math.pow(10, precision || 5),
-		output = encode(coordinates[0].lat, 0, factor) + encode(coordinates[0].lng, 0, factor);
+        output = encode(coordinates[0].lat, 0, factor) + encode(coordinates[0].lng, 0, factor);
 
-	for (var i = 1; i < coordinates.length; i++) {
+    range_coord = [0, coordinates[0]];
+    acc.Set(0);
+
+	for (var i = 1; i < coordinates.length; i++) { //Note iteration starts at index 1
 		var a = coordinates[i], b = coordinates[i - 1];
 		output += encode(a.lat, b.lat, factor);
-		output += encode(a.lng, b.lng, factor);
+        output += encode(a.lng, b.lng, factor);
+
+        acc.Add(geod.Inverse(coordinates[i - 1].lat, coordinates[i - 1].lng, coordinates[i].lat, coordinates[i].lng).s12);
+        range_coord.push([acc.Sum(), coordinates[i]]);
+        //console.log(i + " | " + acc.Sum());
 	}
 
 	return output;
@@ -194,4 +204,8 @@ polyline.toGeoJSON = function (str, precision) {
 
 if (typeof module === 'object' && module.exports) {
 	module.exports = polyline;
+}
+
+polyline.getRange_Coords = function () {
+    return range_coord;
 }
