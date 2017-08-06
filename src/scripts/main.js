@@ -98,6 +98,10 @@ function processElevationData(data) {
     var hillStartDistance;
     var hillBaseHeight;
 
+    var range_coords = polyline.getRange_Coords();
+
+    //console.log(data.range_height.length + " | " + range_coords.length);
+    //console.log("0 | " + data.range_height[0][0] + " | " + range_coords[0][0]);
 
     for (index = 1; index < data.range_height.length; index++ , previousGrad = gradient) {
 
@@ -105,7 +109,7 @@ function processElevationData(data) {
         var deltaX = (data.range_height[index][0] - data.range_height[index - 1][0]);
         var gradient = (deltaY / deltaX) * 100; //Gradient as a percentage
 
-        //console.log(index + " | " + data.range_height[index][0]);
+        //console.log(index + " | " + data.range_height[index][0] + " | " + range_coords[index][0]);
 
         if (gradient > lowerHillBound) {//If greater than lower bound, start/continue a hill segment
 

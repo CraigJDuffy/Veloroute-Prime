@@ -146,7 +146,7 @@ polyline.encode = function (coordinates, precision) {
 	var factor = Math.pow(10, precision || 5),
         output = encode(coordinates[0].lat, 0, factor) + encode(coordinates[0].lng, 0, factor);
 
-    range_coord = [0, coordinates[0]];
+    range_coord = [[0, coordinates[0]]];
     acc.Set(0);
 
 	for (var i = 1; i < coordinates.length; i++) { //Note iteration starts at index 1
@@ -155,8 +155,7 @@ polyline.encode = function (coordinates, precision) {
         output += encode(a.lng, b.lng, factor);
 
         acc.Add(geod.Inverse(coordinates[i - 1].lat, coordinates[i - 1].lng, coordinates[i].lat, coordinates[i].lng).s12);
-        range_coord.push([acc.Sum(), coordinates[i]]);
-        //console.log(i + " | " + acc.Sum());
+        range_coord[i] = [acc.Sum(), coordinates[i]];
 	}
 
 	return output;
