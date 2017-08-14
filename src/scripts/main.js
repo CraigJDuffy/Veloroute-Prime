@@ -66,7 +66,7 @@ function routesFound(e) {
 
 function waypointsChanged(e) {
 
-    if (typeof(e.waypoints[0].latlng) == 'undefined' || typeof(e.waypoints[1].latlng) == 'undefined') { //For some reason the array always has at least two elements, either or both of which may have null attributes.
+    if (typeof (e.waypoints[0].latlng) == 'undefined' || typeof (e.waypoints[1].latlng) == 'undefined') { //For some reason the array always has at least two elements, either or both of which may have null attributes.
 
         for (i = 0; i < hillMarkers.length; i++) { //remove each marker
             hillMarkers[i].remove();
@@ -99,27 +99,20 @@ function receiveElevationData(xhttp) {
 
 function rankHill(dY, dX, hillStartIndex) {
     var area = (0.5) * dY * dX; // area of triangle
-    //console.log("Area:" + area);
 
     switch (gradeHill(area)) {
         case 1:
-            //console.log("Insignificant hill at: " + hillStartIndex);
             hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: greenHillIcon, riseOnHover: true, bubblingMouseEvents: true }).addTo(map));
             break;
         case 2:
-            //console.log("Average hill at: " + hillStartIndex);
             hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: yellowHillIcon, riseOnHover: true, bubblingMouseEvents: true }).addTo(map));
             break;
         case 3:
-            //console.log("Potentially Challenging hill at: " + hillStartIndex);
             hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: orangeHillIcon, riseOnHover: true, bubblingMouseEvents: true }).addTo(map));
             break;
         case 4:
-            //console.log("Challenging hill at: " + hillStartIndex);
             hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: redHillIcon, riseOnHover: true, bubblingMouseEvents: true }).addTo(map));
             break;
-        default:
-        //console.log("Error reciving hill");
     }
 }
 
@@ -149,8 +142,6 @@ function gradeHill(area) {
 //The data returned appears to be in meters.
 function processElevationData(data) {
     var previousGrad;
-    //var hillStartDistance;
-    //var hillBaseHeight;
     var hillStartIndex;
 
     for (index = 1; index < data.range_height.length; index++ , previousGrad = gradient) {
@@ -159,41 +150,31 @@ function processElevationData(data) {
         var deltaX = (data.range_height[index][0] - data.range_height[index - 1][0]);
         var gradient = (deltaY / deltaX) * 100; //Gradient as a percentage
 
-        //console.log(index + " | " + gradient);
 
         if (gradient > lowerHillBound) {//If greater than lower bound, start/continue a hill segment
 
             if (typeof (previousGrad) == 'undefined' || previousGrad < lowerHillBound) { //Start a new hill segment
 
-                //hillStartDistance = data.range_height[index - 1][0];
-                //hillBaseHeight = data.range_height[index - 1][1];
                 hillStartIndex = index - 1;
 
             } else if (gradient < previousGrad + positiveGradientUncertainty && gradient > previousGrad - negativeGradientUncertainty) {// Continue hill segment
 
-                //console.log("Continue Hill");
 
             } else {
-                rankHill(deltaY, deltaX, hillStartIndex);
 
-                //console.log("Restart Hill");
-
-                //hillStartDistance = data.range_height[index - 1][0];
-                //hillBaseHeight = data.range_height[index - 1][1];
-                hillStartIndex = index - 1;
-
-                //end current segment and start a new one.
+                //End current segment and start a new one.
                 //End segment due to sharp change in gradient
                 //Start new segment as gradient is still considered a hill (above lower bound).
-            }
+                rankHill(deltaY, deltaX, hillStartIndex);
+                hillStartIndex = index - 1;
 
+            }
 
         } else {
             //End current segment if applicable, as we are now nominally flat (or downhill).
 
             if (previousGrad > lowerHillBound) {
                 rankHill(deltaY, deltaX, hillStartIndex);
-                //console.log("End Hill");
             }
 
 
