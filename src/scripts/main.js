@@ -101,6 +101,8 @@ function rankHill(dY, dX, hillStartIndex) {
     var area = (0.5) * dY * dX; // area of triangle
     var gradient = (dY / dX) * 100;
 
+
+    //Rounding courtesy https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
     switch (gradeHill(area)) {
         case 1:
             hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: greenHillIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Average Gradient: " + (Math.round(gradient * 100) / 100) +"%\n" + "Distance: " + dX +" meters").addTo(map));
