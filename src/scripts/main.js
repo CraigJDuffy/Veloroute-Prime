@@ -18,6 +18,7 @@ var routingControl = L.Mapzen.routing.control({
     summaryTemplate: '<div class="start">{name}</div><div class="info {costing}">{distance}, {time}</div>',
     routeWhileDragging: false,
     fitSelectedRoutes: 'smart',
+    collapsible: true
 }).addTo(map);
 L.Mapzen.routing.errorControl(routingControl).addTo(map);
 
