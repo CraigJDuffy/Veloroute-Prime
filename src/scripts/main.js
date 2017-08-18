@@ -17,12 +17,20 @@ var routingControl = L.Mapzen.routing.control({
     router: L.Mapzen.routing.router({ costing: "bicycle", costing_options: { bicycle: { use_roads: "1", use_hills: "0" } } }),
     summaryTemplate: '<div class="start">{name}</div><div class="info {costing}">{distance}, {time}</div>',
     routeWhileDragging: false,
-    fitSelectedRoutes: true
+    fitSelectedRoutes: 'smart',
+    collapsible: true
 }).addTo(map);
 L.Mapzen.routing.errorControl(routingControl).addTo(map);
 
 var redHillIcon = L.icon({
     iconUrl: 'media/redHill.svg',
+    iconSize: [32, 48],
+    iconAnchor: [16, 48],
+    popupAnchor: [16, 0]
+});
+
+var redHillStopIcon = L.icon({
+    iconUrl: 'media/redHillStop.svg',
     iconSize: [32, 48],
     iconAnchor: [16, 48],
     popupAnchor: [16, 0]
@@ -35,6 +43,13 @@ var orangeHillIcon = L.icon({
     popupAnchor: [16, 0]
 });
 
+var orangeHillStopIcon = L.icon({
+    iconUrl: 'media/orangeHillStop.svg',
+    iconSize: [32, 48],
+    iconAnchor: [16, 48],
+    popupAnchor: [16, 0]
+});
+
 var yellowHillIcon = L.icon({
     iconUrl: 'media/yellowHill.svg',
     iconSize: [32, 48],
@@ -42,8 +57,22 @@ var yellowHillIcon = L.icon({
     popupAnchor: [16, 0]
 });
 
+var yellowHillStopIcon = L.icon({
+    iconUrl: 'media/yellowHillStop.svg',
+    iconSize: [32, 48],
+    iconAnchor: [16, 48],
+    popupAnchor: [16, 0]
+});
+
 var greenHillIcon = L.icon({
     iconUrl: 'media/greenHill.svg',
+    iconSize: [32, 48],
+    iconAnchor: [16, 48],
+    popupAnchor: [16, 0]
+});
+
+var greenHillStopIcon = L.icon({
+    iconUrl: 'media/greenHillStop.svg',
     iconSize: [32, 48],
     iconAnchor: [16, 48],
     popupAnchor: [16, 0]
@@ -97,21 +126,28 @@ function receiveElevationData(xhttp) {
 
 }
 
-function rankHill(dY, dX, hillStartIndex) {
+function rankHill(dY, dX, hillStartIndex, hillEndIndex) {
     var area = (0.5) * dY * dX; // area of triangle
+    var gradient = (dY / dX) * 100;
 
+
+    //Rounding courtesy https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
     switch (gradeHill(area)) {
         case 1:
-            hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: greenHillIcon, riseOnHover: true, bubblingMouseEvents: true }).addTo(map));
+            hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: greenHillIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Hill Starts\nAverage Gradient: " + (Math.round(gradient * 100) / 100) + "%\n" + "Distance: " + dX + " meters").addTo(map));
+            hillMarkers.push(L.marker(latestRoute.coordinates[hillEndIndex], { icon: greenHillStopIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Hill Ends\nAverage Gradient: " + (Math.round(gradient * 100) / 100) + "%\n" + "Distance: " + dX + " meters").addTo(map));
             break;
         case 2:
-            hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: yellowHillIcon, riseOnHover: true, bubblingMouseEvents: true }).addTo(map));
+            hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: yellowHillIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Hill Starts\nAverage Gradient: " + (Math.round(gradient * 100) / 100) + "%\n" + "Distance: " + dX + " meters").addTo(map));
+            hillMarkers.push(L.marker(latestRoute.coordinates[hillEndIndex], { icon: yellowHillStopIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Hill Ends\nAverage Gradient: " + (Math.round(gradient * 100) / 100) + "%\n" + "Distance: " + dX + " meters").addTo(map));
             break;
         case 3:
-            hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: orangeHillIcon, riseOnHover: true, bubblingMouseEvents: true }).addTo(map));
+            hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: orangeHillIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Hill Starts\nAverage Gradient: " + (Math.round(gradient * 100) / 100) + "%\n" + "Distance: " + dX + " meters").addTo(map));
+            hillMarkers.push(L.marker(latestRoute.coordinates[hillEndIndex], { icon: orangeHillStopIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Hill Ends\nAverage Gradient: " + (Math.round(gradient * 100) / 100) + "%\n" + "Distance: " + dX + " meters").addTo(map));
             break;
         case 4:
-            hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: redHillIcon, riseOnHover: true, bubblingMouseEvents: true }).addTo(map));
+            hillMarkers.push(L.marker(latestRoute.coordinates[hillStartIndex], { icon: redHillIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Hill Starts\nAverage Gradient: " + (Math.round(gradient * 100) / 100) + "%\n" + "Distance: " + dX + " meters").addTo(map));
+            hillMarkers.push(L.marker(latestRoute.coordinates[hillEndIndex], { icon: redHillStopIcon, riseOnHover: true, bubblingMouseEvents: true }).bindTooltip("Hill Ends\nAverage Gradient: " + (Math.round(gradient * 100) / 100) + "%\n" + "Distance: " + dX + " meters").addTo(map));
             break;
     }
 }
@@ -144,6 +180,9 @@ function processElevationData(data) {
     var previousGrad;
     var hillStartIndex;
 
+    var hillStartHeight; //Used to hold details of the base of the hill for the ranking algorithm.
+    var hillStartDistance;
+
     for (index = 1; index < data.range_height.length; index++ , previousGrad = gradient) {
 
         var deltaY = (data.range_height[index][1] - data.range_height[index - 1][1]);
@@ -156,6 +195,8 @@ function processElevationData(data) {
             if (typeof (previousGrad) == 'undefined' || previousGrad < lowerHillBound) { //Start a new hill segment
 
                 hillStartIndex = index - 1;
+                hillStartHeight = data.range_height[index - 1][1];
+                hillStartDistance = data.range_height[index - 1][0];
 
             } else if (gradient < previousGrad + positiveGradientUncertainty && gradient > previousGrad - negativeGradientUncertainty) {// Continue hill segment
 
@@ -165,8 +206,10 @@ function processElevationData(data) {
                 //End current segment and start a new one.
                 //End segment due to sharp change in gradient
                 //Start new segment as gradient is still considered a hill (above lower bound).
-                rankHill(deltaY, deltaX, hillStartIndex);
+                rankHill((data.range_height[index - 1][1] - hillStartHeight), (data.range_height[index - 1][0] - hillStartDistance), hillStartIndex, index-1); //Takes in the dY and dX of the entire hill, not just one segment
                 hillStartIndex = index - 1;
+                hillStartHeight = data.range_height[index - 1][1];
+                hillStartDistance = data.range_height[index - 1][0];
 
             }
 
@@ -174,7 +217,7 @@ function processElevationData(data) {
             //End current segment if applicable, as we are now nominally flat (or downhill).
 
             if (previousGrad > lowerHillBound) {
-                rankHill(deltaY, deltaX, hillStartIndex);
+                rankHill((data.range_height[index - 1][1] - hillStartHeight), (data.range_height[index - 1][0] - hillStartDistance), hillStartIndex, index-1);
             }
 
 
