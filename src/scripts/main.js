@@ -82,9 +82,11 @@ routingControl.addEventListener("routesfound", routesFound);
 routingControl.getPlan().addEventListener("waypointschanged", waypointsChanged);
 
 
-var lowerHillBound = 6;
-var positiveGradientUncertainty = 14;
+var lowerHillBound = 6; //The cutout gradient value. Any gradient below this is nominally flat.
+var positiveGradientUncertainty = 14; //The min and max change in gradient percentage points before starting a new hill.
 var negativeGradientUncertainty = 14;
+var hillEndDistanceRequired = 100; //Distance of nominally flat ground in meters defining the end of a hill
+
 var latestRoute;
 var hillMarkers = [];
 
@@ -176,51 +178,82 @@ function gradeHill(area) {
 
 
 //The data returned appears to be in meters.
+
+//The hillEndIndex variable is continually updated whilst iterating over the data. It does not include the required flat section at the end of a hill, so that the flat does not affect the hill ranking
+//hillFlatDistance holds the length of the current flat segment after a hill. It is 0 when the current gradient is not flat. It is -1 when there is no hill segment to end. It is continually zeroed whenever a non-flat section is encountered (either to start or continue a hill segment). 
 function processElevationData(data) {
     var previousGrad;
+    var hillFlatDistance = -1;
+    var lastHillGradient;
+
     var hillStartIndex;
+    var hillEndIndex;
 
-    var hillStartHeight; //Used to hold details of the base of the hill for the ranking algorithm.
-    var hillStartDistance;
 
-    for (index = 1; index < data.range_height.length; index++ , previousGrad = gradient) {
+    for (index = 1; index < data.range_height.length; index++) {
 
         var deltaY = (data.range_height[index][1] - data.range_height[index - 1][1]);
         var deltaX = (data.range_height[index][0] - data.range_height[index - 1][0]);
         var gradient = (deltaY / deltaX) * 100; //Gradient as a percentage
 
+        console.log(index + " | " + gradient + " | +" + deltaX);
 
         if (gradient > lowerHillBound) {//If greater than lower bound, start/continue a hill segment
 
-            if (typeof (previousGrad) == 'undefined' || previousGrad < lowerHillBound) { //Start a new hill segment
+            if (hillFlatDistance == -1) { //Start a new hill segment
 
                 hillStartIndex = index - 1;
-                hillStartHeight = data.range_height[index - 1][1];
-                hillStartDistance = data.range_height[index - 1][0];
+                hillEndIndex = index;
+                hillFlatDistance = 0;
 
-            } else if (gradient < previousGrad + positiveGradientUncertainty && gradient > previousGrad - negativeGradientUncertainty) {// Continue hill segment
+                console.log("Start");
 
 
-            } else {
+            } else if (!(gradient < lastHillGradient + positiveGradientUncertainty && gradient > lastHillGradient - negativeGradientUncertainty)) {
 
                 //End current segment and start a new one.
                 //End segment due to sharp change in gradient
                 //Start new segment as gradient is still considered a hill (above lower bound).
-                rankHill((data.range_height[index - 1][1] - hillStartHeight), (data.range_height[index - 1][0] - hillStartDistance), hillStartIndex, index-1); //Takes in the dY and dX of the entire hill, not just one segment
+                //This occurs at any point in a hill or within the required distance form the end
+
+                hillEndIndex = index - 1;
+
+                rankHill((data.range_height[hillEndIndex][1] - data.range_height[hillStartIndex][1]), (data.range_height[hillEndIndex][0] - data.range_height[hillStartIndex][0]), hillStartIndex, hillEndIndex); //Takes in the dY and dX of the entire hill, not just one segment
+
                 hillStartIndex = index - 1;
-                hillStartHeight = data.range_height[index - 1][1];
-                hillStartDistance = data.range_height[index - 1][0];
+                hillEndIndex = index;
+                hillFlatDistance = 0;
+
+                console.log(index + " | Split");
+
+            } else { //Continue hill
+
+                console.log("Continue");
+
+                hillEndIndex = index;
+                hillFlatDistance = 0;
 
             }
+
+            lastHillGradient = gradient;
 
         } else {
             //End current segment if applicable, as we are now nominally flat (or downhill).
 
-            if (previousGrad > lowerHillBound) {
-                rankHill((data.range_height[index - 1][1] - hillStartHeight), (data.range_height[index - 1][0] - hillStartDistance), hillStartIndex, index-1);
+            if (hillFlatDistance > hillEndDistanceRequired) { //End hill if required distance reached
+                rankHill((data.range_height[hillEndIndex][1] - data.range_height[hillStartIndex][1]), (data.range_height[hillEndIndex][0] - data.range_height[hillStartIndex][0]), hillStartIndex, hillEndIndex);
+                hillFlatDistance = -1;
+                console.log("End Hill");
+            } else if (hillFlatDistance != -1) { //Not yet reached the required distance to end the current hill
+                hillFlatDistance += (deltaX); //So add on the distance of this 'flat' segment
+                console.log("Add flat distance");
             }
 
 
         }
+    }
+
+    if (hillFlatDistance > -1) { //If there is an unfinished hill segment at the end of the route
+        rankHill((data.range_height[hillEndIndex][1] - data.range_height[hillStartIndex][1]), (data.range_height[hillEndIndex][0] - data.range_height[hillStartIndex][0]), hillStartIndex, hillEndIndex);
     }
 }
