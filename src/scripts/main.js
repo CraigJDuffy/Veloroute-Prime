@@ -88,6 +88,9 @@ var negativeGradientUncertainty = 14;
 var hillEndDistanceRequired = 100; //Distance of nominally flat ground in meters defining the end of a hill
 
 var latestRoute;
+var elevationRequests;
+var elevationReceived;
+var elevationResults;
 var hillMarkers = [];
 
 function routesFound(e) {
@@ -109,22 +112,89 @@ function waypointsChanged(e) {
 
 function requestElevationData(e) {
 
-    var data = polyline.encode(e.routes[0].coordinates, 6);
+  
 
-    var xhttp = new XMLHttpRequest();
-    data = "?json={\"range\":true, \"encoded_polyline\":\"".concat(data, "\"}&api_key=mapzen-bTyRhDo");
-    xhttp.onreadystatechange = function () {
-        receiveElevationData(xhttp);
-    };
-    xhttp.open("GET", "http://elevation.mapzen.com/height".concat(data), true);
-    xhttp.send();
+    //var polylineSegments = [];
+    var data = "";
+    elevationRequests = 0;
+    elevationReceived = 0;
+    elevationResults = [];
+
+
+    for (elevationRequests = 0; (elevationRequests * 1000) < e.routes[0].coordinates.length; elevationRequests++){
+
+        var xhttp = new XMLHttpRequest();
+
+        xhttp.onreadystatechange = createfunc(xhttp);
+
+
+        //slice(inclusive start, exclusive end)
+        data = "?json={\"range\":true, \"encoded_polyline\":\"".concat(polyline.encode(e.routes[0].coordinates.slice((elevationRequests * 1000), (elevationRequests * 1000) + 1001), 6), "\"}&api_key=mapzen-bTyRhDo&id=", elevationRequests);
+        //Note that having "+1001" rather than 1000 should result in each splice overlapping by one element. This avoids jumps in elevation with a 0 deltaX when the data is reconstituted.
+
+        xhttp.open("GET", "http://elevation.mapzen.com/height".concat(data), true);
+        xhttp.send();
+
+        alert("SendRequest");
+
+    }
+
+
+
+}
+
+function createfunc(xhttp) {
+    return function () { receiveElevationData(xhttp); };
 }
 
 function receiveElevationData(xhttp) {
 
     if (xhttp.readyState == 4 && xhttp.status == 200) {
-        processElevationData(JSON.parse(xhttp.responseText));
+        alert("Received data");
+
+
+        var temp = JSON.parse(xhttp.responseText);
+
+        console.log(temp);
+
+        elevationResults[temp.id] = temp.range_height; //This orders the incoming results.
+
+        elevationReceived += 1;
+
+        //alert(elevationReceived);
+
+        if (elevationReceived == (elevationRequests)) {
+            processElevationData(reconstituteElevationData(elevationResults));
+        }
     }
+
+}
+
+function reconstituteElevationData(elevationResults) {
+    var elevationData = [];
+
+    for (i = 0; i < elevationResults.length; i++) {
+
+        elevationData = elevationData.concat(elevationResults[i]); //This combines all the results into a single array of data
+        
+    }
+
+    var acc = elevationData[0][0];
+
+    for (i = 1; i < elevationData.length; i++) { 
+
+        if (elevationData[i][0] == 0) {
+            acc = elevationData[i - 1][0];
+            elevationData.splice(i, 1);  //Removes the element with distance index zero.
+                                         //Since such elements are overlapped between the segments, removal loses no data.
+                                         //However prevents having two data points with deltaX of zero.
+        }
+
+        elevationData[i][0] += acc;
+
+    }
+
+    return elevationData;
 
 }
 
@@ -190,10 +260,10 @@ function processElevationData(data) {
     var hillEndIndex;
 
 
-    for (index = 1; index < data.range_height.length; index++) {
+    for (index = 1; index < data.length; index++) {
 
-        var deltaY = (data.range_height[index][1] - data.range_height[index - 1][1]);
-        var deltaX = (data.range_height[index][0] - data.range_height[index - 1][0]);
+        var deltaY = (data[index][1] - data[index - 1][1]);
+        var deltaX = (data[index][0] - data[index - 1][0]);
         var gradient = (deltaY / deltaX) * 100; //Gradient as a percentage
 
         console.log(index + " | " + gradient + " | +" + deltaX);
@@ -218,7 +288,7 @@ function processElevationData(data) {
 
                 hillEndIndex = index - 1;
 
-                rankHill((data.range_height[hillEndIndex][1] - data.range_height[hillStartIndex][1]), (data.range_height[hillEndIndex][0] - data.range_height[hillStartIndex][0]), hillStartIndex, hillEndIndex); //Takes in the dY and dX of the entire hill, not just one segment
+                rankHill((data[hillEndIndex][1] - data[hillStartIndex][1]), (data[hillEndIndex][0] - data[hillStartIndex][0]), hillStartIndex, hillEndIndex); //Takes in the dY and dX of the entire hill, not just one segment
 
                 hillStartIndex = index - 1;
                 hillEndIndex = index;
@@ -241,7 +311,7 @@ function processElevationData(data) {
             //End current segment if applicable, as we are now nominally flat (or downhill).
 
             if (hillFlatDistance > hillEndDistanceRequired) { //End hill if required distance reached
-                rankHill((data.range_height[hillEndIndex][1] - data.range_height[hillStartIndex][1]), (data.range_height[hillEndIndex][0] - data.range_height[hillStartIndex][0]), hillStartIndex, hillEndIndex);
+                rankHill((data[hillEndIndex][1] - data[hillStartIndex][1]), (data[hillEndIndex][0] - data[hillStartIndex][0]), hillStartIndex, hillEndIndex);
                 hillFlatDistance = -1;
                 console.log("End Hill");
             } else if (hillFlatDistance != -1) { //Not yet reached the required distance to end the current hill
@@ -254,6 +324,6 @@ function processElevationData(data) {
     }
 
     if (hillFlatDistance > -1) { //If there is an unfinished hill segment at the end of the route
-        rankHill((data.range_height[hillEndIndex][1] - data.range_height[hillStartIndex][1]), (data.range_height[hillEndIndex][0] - data.range_height[hillStartIndex][0]), hillStartIndex, hillEndIndex);
+        rankHill((data[hillEndIndex][1] - data[hillStartIndex][1]), (data[hillEndIndex][0] - data[hillStartIndex][0]), hillStartIndex, hillEndIndex);
     }
 }
