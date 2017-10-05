@@ -135,8 +135,6 @@ function requestElevationData(e) {
         xhttp.open("GET", "http://elevation.mapzen.com/height".concat(data), true);
         xhttp.send();
 
-        alert("SendRequest");
-
     }
 
 
@@ -150,12 +148,8 @@ function createfunc(xhttp) {
 function receiveElevationData(xhttp) {
 
     if (xhttp.readyState == 4 && xhttp.status == 200) {
-        alert("Received data");
-
 
         var temp = JSON.parse(xhttp.responseText);
-
-        console.log(temp);
 
         elevationResults[temp.id] = temp.range_height; //This orders the incoming results.
 
@@ -202,6 +196,7 @@ function rankHill(dY, dX, hillStartIndex, hillEndIndex) {
     var area = (0.5) * dY * dX; // area of triangle
     var gradient = (dY / dX) * 100;
 
+    console.log(area);
 
     //Rounding courtesy https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
     switch (gradeHill(area)) {
@@ -225,10 +220,10 @@ function rankHill(dY, dX, hillStartIndex, hillEndIndex) {
 }
 
 function gradeHill(area) {
-    var lvl1 = 5;
-    var lvl2 = 20;
-    var lvl3 = 40;
-    var lvl4 = 60;
+    var lvl1 = 50;
+    var lvl2 = 100;
+    var lvl3 = 250;
+    var lvl4 = 400;
 
     if (area > lvl1) {
         if (area < lvl2) {
@@ -266,7 +261,7 @@ function processElevationData(data) {
         var deltaX = (data[index][0] - data[index - 1][0]);
         var gradient = (deltaY / deltaX) * 100; //Gradient as a percentage
 
-        console.log(index + " | " + gradient + " | +" + deltaX);
+        //console.log(index + " | " + gradient + " | +" + deltaX);
 
         if (gradient > lowerHillBound) {//If greater than lower bound, start/continue a hill segment
 
@@ -276,7 +271,7 @@ function processElevationData(data) {
                 hillEndIndex = index;
                 hillFlatDistance = 0;
 
-                console.log("Start");
+               // console.log("Start");
 
 
             } else if (!(gradient < lastHillGradient + positiveGradientUncertainty && gradient > lastHillGradient - negativeGradientUncertainty)) {
@@ -294,11 +289,11 @@ function processElevationData(data) {
                 hillEndIndex = index;
                 hillFlatDistance = 0;
 
-                console.log(index + " | Split");
+                //console.log(index + " | Split");
 
             } else { //Continue hill
 
-                console.log("Continue");
+                //console.log("Continue");
 
                 hillEndIndex = index;
                 hillFlatDistance = 0;
@@ -313,10 +308,10 @@ function processElevationData(data) {
             if (hillFlatDistance > hillEndDistanceRequired) { //End hill if required distance reached
                 rankHill((data[hillEndIndex][1] - data[hillStartIndex][1]), (data[hillEndIndex][0] - data[hillStartIndex][0]), hillStartIndex, hillEndIndex);
                 hillFlatDistance = -1;
-                console.log("End Hill");
+                //console.log("End Hill");
             } else if (hillFlatDistance != -1) { //Not yet reached the required distance to end the current hill
                 hillFlatDistance += (deltaX); //So add on the distance of this 'flat' segment
-                console.log("Add flat distance");
+                //console.log("Add flat distance");
             }
 
 
